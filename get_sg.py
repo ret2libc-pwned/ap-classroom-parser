@@ -72,8 +72,8 @@ if __name__ == '__main__':
 		'''
 		question_no += 1
 
-	with open("scoring_guide.html", "w") as fout:
+	with open(f"scoring_guide_{name}.html", "w") as fout:
 		fout.write(sg_html)
 
 	import os
-	os.system("open scoring_guide.html")
+	os.system(f"open \"scoring_guide_{name}.html\"")

@@ -1,4 +1,8 @@
+# usage: cat data.json | python get_sg.py
+
 import json
+import sys
+# import argparse
 
 def get_question_statement(question):
 	return question['stimulus']
@@ -22,7 +26,7 @@ def get_answer_choice(question):
 def get_score(question):
 	return question['validation']['valid_response']['score']
 
-def get_tag(index):
+def get_tag_by_index(index):
 	# index starts from 1
 	return all_tags[index - 1]
 
@@ -41,8 +45,10 @@ def is_start_from_zero():
 	return start_from_zero
 
 if __name__ == '__main__':
-	with open("db.json", "r") as fin:
-		data = json.load(fin)
+	# with open("db.json", "r") as fin:
+	# 	data = json.load(fin)
+
+	data = json.load(sys.stdin)
 
 	all_questions = [item['questions'][0] for item in data['data']['apiActivity']['items']]
 	all_tags = [tag_item for tag_item in data['data']['apiActivity']['tags'].values()]
@@ -58,6 +64,7 @@ if __name__ == '__main__':
 	'''
 
 	question_no = 1
+	all_answers = []
 
 	for question in all_questions:
 		sg_html += f'''<h2>Question {question_no} [{get_score(question)} pt (s)]</h2>
@@ -67,13 +74,17 @@ if __name__ == '__main__':
 		<h3>Answer</h3>
 		{get_answer_choice(question)}
 		<h3>Tags</h3>
-		{stringify_tag(get_tag(question_no))}
+		{stringify_tag(get_tag_by_index(question_no))}
 		<hr>
 		'''
+		all_answers.append(get_answer_choice(question))
 		question_no += 1
 
 	with open(f"scoring_guide_{name}.html", "w") as fout:
 		fout.write(sg_html)
 
-	import os
-	os.system(f"open \"scoring_guide_{name}.html\"")
+	print(f'[*] Name: {name}')
+	# print(f'[+] Answer: {all_answers}')
+	print(f'[+] Written: scoring_guide_{name}.html')
+	# import os
+	# os.system(f"open \"scoring_guide_{name}.html\"")

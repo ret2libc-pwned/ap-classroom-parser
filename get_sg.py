@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
-# usage: cat data.json | python get_sg.py
 
 import json
 import sys
+import argparse
 
 
 class Question:
     """Class to represent an individual question from the AP Classroom data"""
-    def __init__(self, question_data, is_zero_indexed):
+    def __init__(self, question_data):
         self.data = question_data
-        self.is_zero_indexed = is_zero_indexed
+        self.is_zero_indexed = self._check_if_is_zero_indexed()
+
+    def _check_if_is_zero_indexed(self):
+        """Check if the options are zero-indexed"""
+        all_option_symbols = [int(option['value'][1]) for option in self.data['options']]
+        return min(all_option_symbols) == 0 or not(max(all_option_symbols) == 5)
         
     def get_statement(self):
         """Get the question statement"""
@@ -55,16 +60,15 @@ class Tag:
 class APClassroomParser:
     """Main class for parsing AP Classroom data and generating scoring guides"""
     
-    def __init__(self, data):
+    def __init__(self, data, type):
         self.data = data
         self.all_questions_data = [item['questions'][0] for item in data['data']['apiActivity']['items']]
-        self.all_tags_data = [tag_item for tag_item in data['data']['apiActivity']['tags'].values()]
+        if type == 'quiz':
+            self.all_tags_data = [tag_item for tag_item in data['data']['apiActivity']['tags'].values()]
+        elif type == 'result':
+            self.all_tags_data = [['Unavailable'] for question in self.all_questions_data]
+       
         self.activity_name = data['data']['apiActivity']['questionsApiActivity']['name']
-        self.is_zero_indexed = self._check_if_zero_indexed()
-        
-    def _check_if_zero_indexed(self):
-        """Check if the options are zero-indexed"""
-        return int(self.all_questions_data[0]['options'][0]['value'][1]) == 0
     
     def get_tag_by_index(self, index):
         """Get tag data by index (1-based)"""
@@ -82,7 +86,7 @@ class APClassroomParser:
         all_answers = []
         
         for i, question_data in enumerate(self.all_questions_data, 1):
-            question = Question(question_data, self.is_zero_indexed)
+            question = Question(question_data)
             tag = self.get_tag_by_index(i)
             
             sg_html += f'''<h2>Question {i} [{question.get_score()} pt(s)]</h2>
@@ -103,8 +107,12 @@ class APClassroomParser:
     def write_scoring_guide(self):
         """Write the scoring guide to a file and print information"""
         sg_html, all_answers = self.generate_scoring_guide()
+
+        escape_filename = lambda name: name.replace(' ', '_')
         
         filename = f"scoring_guide_{self.activity_name}.html"
+        filename = escape_filename(filename)
+        
         with open(filename, "w") as fout:
             fout.write(sg_html)
         
@@ -116,8 +124,19 @@ class APClassroomParser:
 
 def main():
     """Main function to parse input and generate scoring guide"""
-    data = json.load(sys.stdin)
-    parser = APClassroomParser(data)
+
+    # Initialize parser
+    arg_parser = argparse.ArgumentParser(
+        prog='AP Classroom Parser',
+        description='Generate scoring guides with high quality on AP Classroom students\' client-side data package.',
+    )
+    arg_parser.add_argument('filename', help='What\'s the name (with full directory) of your JSON data?')
+    arg_parser.add_argument('--type', choices=['quiz', 'result'], default='quiz', help='Where did you get your JSON data? \'quiz\' page or \'result\' page?')
+    args = arg_parser.parse_args()
+    with open(args.filename, 'r') as fin:
+        data = json.load(fin)
+
+    parser = APClassroomParser(data, type=args.type)
     parser.write_scoring_guide()
 
 

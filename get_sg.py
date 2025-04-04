@@ -298,7 +298,7 @@ class APClassroomParser:
             sg_html += f'''
             <div class="question">
                 <div class="question-header">
-                    Question {i} <span class="points">[{question.get_score()} pt(s)]</span>
+                    Question {i} <span class="points">{question.get_score()} pt(s)</span>
                 </div>
                 <div class="question-content">
                     <div class="statement">{question.get_statement()}</div>
@@ -320,7 +320,7 @@ class APClassroomParser:
         # Add footer
         sg_html += '''
             <div class="footer">
-                © College Board | AP Classroom Scoring Guide
+                © College Board | AP Classroom Scoring Guide (from AP Classroom Parser)
             </div>
         </div>
         </body>
@@ -352,7 +352,7 @@ def main():
 
     # Initialize parser
     arg_parser = argparse.ArgumentParser(
-        prog='AP Classroom Parser',
+        prog='get_sg.py',
         description='Generate scoring guides with high quality on AP Classroom students\' client-side data package.',
     )
     arg_parser.add_argument('filename', help='What\'s the name (with full directory) of your JSON data?')

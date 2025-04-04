@@ -55,9 +55,12 @@ class Tag:
 class APClassroomParser:
     """Main class for parsing AP Classroom data and generating scoring guides"""
     
-    def __init__(self, data):
+    def __init__(self, data, mode='quiz'):
         self.data = data
-        self.all_questions_data = [item['questions'][0] for item in data['data']['apiActivity']['items']]
+        if mode == 'quiz':
+            self.all_questions_data = [item['questions'][0] for item in data['data']['apiActivity']['items']]
+        elif mode == 'result':
+            self.all_questions_data = [] # TODO
         self.all_tags_data = [tag_item for tag_item in data['data']['apiActivity']['tags'].values()]
         self.activity_name = data['data']['apiActivity']['questionsApiActivity']['name']
         self.is_zero_indexed = self._check_if_zero_indexed()
@@ -109,6 +112,7 @@ class APClassroomParser:
             fout.write(sg_html)
         
         print(f'[*] Name: {self.activity_name}')
+        print(f'[+] Answers: {all_answers}')
         print(f'[+] Written: {filename}')
         
         return filename

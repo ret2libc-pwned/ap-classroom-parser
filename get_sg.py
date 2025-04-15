@@ -23,13 +23,16 @@ class Question:
     
     def get_options(self):
         """Get the list of options"""
-        return [option['label'] for option in self.data['options']]
+        return {option['value']: option['label'] for option in self.data['options']}
     
     def get_answer_choice(self):
         """Get the answer choice letter (A, B, C, D, E)"""
-        table = ['A', 'B', 'C', 'D', 'E'] if self.is_zero_indexed else ['', 'A', 'B', 'C', 'D', 'E']
-        answer_index = int(self.data['validation']['valid_response']['value'][0][1])
-        return table[answer_index]
+        # table =  if self.is_zero_indexed else ['', 'A', 'B', 'C', 'D', 'E']
+        all_options = self.get_options()
+        answer_key = self.data['validation']['valid_response']['value'][0]
+        answer_full_text = all_options[answer_key]
+        result = ['A', 'B', 'C', 'D', 'E'][list(all_options.values()).index(answer_full_text)]
+        return result
     
     def get_score(self):
         """Get the score value for the question"""
@@ -38,12 +41,30 @@ class Question:
     def stringify_options(self):
         """Format options as HTML with proper styling classes"""
         result_html = "<div class='options'>"
-        for i, option in enumerate(self.get_options()):
+        for i, option_tuple in enumerate(self.get_options().items()):
             option_class = "option"
+            id, option = option_tuple
             if ['A', 'B', 'C', 'D', 'E'][i] == self.get_answer_choice():
                 option_class += " correct-answer"
             result_html += f"<div class='{option_class}'><div class='option-label'>{['A', 'B', 'C', 'D', 'E'][i]}.</div> {option}</div>"
         result_html += "</div>"
+        return result_html
+
+class Feature:
+    """Class to represent 'feature' in JSON data, eg. reading passages and longer problem statements"""
+    def __init__(self, feature_data):
+        self.data = feature_data
+        self.id = feature_data['feature_id']
+        self.type = feature_data['type']
+        self.content = feature_data['content']
+    
+    def stringify(self):
+        """Format options as HTML with proper styling classes"""
+        feature_class = 'feature'
+        if 'passage' in self.type:
+            feature_class = 'passage'
+        
+        result_html += f"<div class='{feature_class}'>" + self.content + "</div>"
         return result_html
 
 
@@ -69,6 +90,10 @@ class APClassroomParser:
     def __init__(self, data, type):
         self.data = data
         self.all_questions_data = [item['questions'][0] for item in data['data']['apiActivity']['items']]
+        # self.all_features_data = [item['features'][0] for item in data['data']['apiActivity']['items']]
+
+        # self.first_question_where_feature_displayed = {Feature(feature).id: -1 for feature in self.all_features_data}
+        
         if type == 'quiz':
             self.all_tags_data = [tag_item for tag_item in data['data']['apiActivity']['tags'].values()]
         elif type == 'result':
@@ -78,6 +103,10 @@ class APClassroomParser:
     def get_tag_by_index(self, index):
         """Get tag data by index (1-based)"""
         return Tag(self.all_tags_data[index - 1])
+    
+    def get_feature_by_index(self, index):
+        """Get the feature data by index (1-based)"""
+        return Feature(self.all_features_data[index - 1])
     
     def generate_scoring_guide(self):
         """Generate the HTML scoring guide with AP-style CSS"""
@@ -167,6 +196,15 @@ class APClassroomParser:
             .question-content {{
               padding: 20px;
               background-color: white;
+            }}
+
+            .feature {{
+                paddint: 20px;
+                background-color: white;
+            }}
+
+            .passage {{
+                paddin
             }}
             
             h2 {{
@@ -290,6 +328,10 @@ class APClassroomParser:
         '''
         
         all_answers = []
+        # all_features = {}
+
+        # for i, feature_data in enumerate(self.data):
+            # feature = Feature(self.data[])
         
         for i, question_data in enumerate(self.all_questions_data, 1):
             question = Question(question_data)
@@ -301,6 +343,7 @@ class APClassroomParser:
                     Question {i} <span class="points">{question.get_score()} pt(s)</span>
                 </div>
                 <div class="question-content">
+                    
                     <div class="statement">{question.get_statement()}</div>
                     
                     <h3>Choices</h3>
@@ -342,6 +385,7 @@ class APClassroomParser:
             fout.write(sg_html)
         
         print(f'[*] Name: {self.activity_name}')
+        print(f'[+] ans = {all_answers}')
         print(f'[+] Written: {filename}')
         
         return filename

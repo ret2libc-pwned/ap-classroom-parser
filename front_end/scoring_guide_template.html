@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scoring Guide for {{ activity_name }}</title>
+    <style>{{ stylesheet_css }}</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>Scoring Guide for {{ activity_name }}</h1>
+    </div>
+    <div class="important-notice">
+        <strong>Important:</strong> This document is parsed from students' client-side data package (from a bug), which <i>should not</i> be accessed by students themselves.
+        <br><strong>DO NOT SHARE THIS DOCUMENT!</strong>
+    </div>
+    {{ questions_html }}
+    <div class="footer">
+        © College Board | AP Classroom Scoring Guide (fetched from AP Classroom Parser)
+    </div>
+</div>
+</body>
+</html>

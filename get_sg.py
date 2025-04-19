@@ -3,6 +3,7 @@
 import json
 import sys
 import argparse
+import os
 
 
 class Question:
@@ -105,266 +106,44 @@ class APClassroomParser:
     
     def generate_scoring_guide(self):
         """Generate the HTML scoring guide with AP-style CSS"""
-        # Start with proper HTML5 document structure
-        sg_html = f'''<!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Scoring Guide for {self.activity_name} (AP Classroom)</title>
-            <style>
-            /* AP Classroom Scoring Guide Stylesheet */
-            :root {{
-              --ap-blue: #0056a6;
-              --ap-dark-blue: #003366;
-              --ap-light-blue: #e9f0f8;
-              --ap-accent: #ff5a00;
-              --ap-text: #333333;
-              --ap-light-gray: #f5f5f5;
-              --ap-border: #dddddd;
-            }}
-            
-            body {{
-              font-family: "Helvetica Neue", Arial, sans-serif;
-              line-height: 1.6;
-              color: var(--ap-text);
-              margin: 0;
-              padding: 0;
-              background-color: white;
-            }}
-            
-            .container {{
-              max-width: 900px;
-              margin: 0 auto;
-              padding: 20px;
-            }}
-            
-            /* Header Styling */
-            .header {{
-              background-color: var(--ap-blue);
-              color: white;
-              padding: 15px 20px;
-              margin-bottom: 30px;
-              border-bottom: 5px solid var(--ap-accent);
-            }}
-            
-            h1 {{
-              font-size: 24px;
-              margin: 0;
-              padding: 10px 0;
-              color: var(--ap-blue);
-              border-bottom: 2px solid var(--ap-blue);
-              margin-bottom: 20px;
-            }}
-            
-            .header h1 {{
-              color: white;
-              border-bottom: none;
-              margin-bottom: 0;
-            }}
-            
-            .important-notice {{
-              background-color: #fff3e0;
-              border-left: 4px solid var(--ap-accent);
-              padding: 15px;
-              margin-bottom: 25px;
-              font-size: 14px;
-            }}
-            
-            /* Question Styling */
-            .question {{
-              margin-bottom: 40px;
-              border: 1px solid var(--ap-border);
-              border-radius: 4px;
-              overflow: hidden;
-            }}
-            
-            .question-header {{
-              background-color: var(--ap-light-blue);
-              padding: 12px 15px;
-              font-weight: bold;
-              border-bottom: 1px solid var(--ap-border);
-              display: flex;
-              justify-content: space-between;
-            }}
-            
-            .question-content {{
-              padding: 20px;
-              background-color: white;
-            }}
 
-            .feature {{
-                paddint: 20px;
-                background-color: white;
-            }}
+        template_path = os.path.join("front_end", "scoring_guide_template.html")
+        stylesheet_path = os.path.join("front_end", "scoring_guide.css")
 
-            .passage {{
-                paddin
-            }}
-            
-            h2 {{
-              font-size: 18px;
-              color: var(--ap-dark-blue);
-              margin-top: 30px;
-              margin-bottom: 15px;
-              display: flex;
-              align-items: center;
-            }}
-            
-            h2::before {{
-              content: "";
-              display: inline-block;
-              width: 6px;
-              height: 20px;
-              background-color: var(--ap-accent);
-              margin-right: 10px;
-            }}
-            
-            h3 {{
-              font-size: 16px;
-              color: var(--ap-blue);
-              margin-top: 20px;
-              margin-bottom: 10px;
-              font-weight: 600;
-            }}
-            
-            /* Options Styling */
-            .options {{
-              margin-bottom: 20px;
-            }}
-            
-            .option {{
-              display: flex;
-              margin-bottom: 12px;
-              padding: 10px;
-              border: 1px solid var(--ap-border);
-              border-radius: 4px;
-              background-color: var(--ap-light-gray);
-            }}
-            
-            .option-label {{
-              font-weight: bold;
-              min-width: 30px;
-              color: var(--ap-dark-blue);
-            }}
-            
-            .answer {{
-              font-weight: bold;
-              color: var(--ap-accent);
-              font-size: 18px;
-              padding: 10px;
-              background-color: var(--ap-light-blue);
-              display: inline-block;
-              border-radius: 4px;
-              border: 1px solid var(--ap-blue);
-            }}
-            
-            /* Tags Styling */
-            list {{
-              display: block;
-              margin: 0;
-              padding: 0 0 0 20px;
-            }}
-            
-            li {{
-              margin-bottom: 6px;
-              position: relative;
-              list-style-type: none;
-            }}
-            
-            li::before {{
-              content: "•";
-              color: var(--ap-accent);
-              font-weight: bold;
-              display: inline-block;
-              width: 1em;
-              margin-left: -1em;
-            }}
-            
-            hr {{
-              border: 0;
-              height: 1px;
-              background-color: var(--ap-border);
-              margin: 30px 0;
-            }}
-            
-            /* Footer */
-            .footer {{
-              text-align: center;
-              margin-top: 40px;
-              padding: 20px;
-              font-size: 12px;
-              color: #999;
-              border-top: 1px solid var(--ap-border);
-            }}
-            
-            /* Correct answer highlighting */
-            .correct-answer {{
-              background-color: #e7f5e8;
-              border-left: 4px solid #28a745;
-            }}
-            
-            .statement {{
-              margin-bottom: 20px;
-              line-height: 1.6;
-            }}
-            </style>
-        </head>
-        <body>
-        <div class="container">
-            <div class="header">
-                <h1>Scoring Guide for {self.activity_name}</h1>
-            </div>
-            
-            <div class="important-notice">
-                <strong>Important:</strong> This document is parsed from students' client-side data package (from a bug), which <i>should not</i> be accessed by students themselves.
-                <br><strong>DO NOT SHARE THIS DOCUMENT!</strong>
-            </div>
-        '''
-        
+        with open(template_path, "r") as template_file:
+            template_html = template_file.read()
+
+        with open(stylesheet_path, "r") as stylesheet_file:
+            stylesheet_css = stylesheet_file.read()
+
+        questions_html = ""
         all_answers = []
-        # all_features = {}
-
-        # for i, feature_data in enumerate(self.data):
-            # feature = Feature(self.data[])
-        
         for i, question_data in enumerate(self.all_questions_data, 1):
             question = Question(question_data)
             tag = self.get_tag_by_index(i)
             feature = self.get_feature_by_index(i)
-            
-            sg_html += f'''
+
+            questions_html += f'''
             <div class="question">
                 <div class="question-header">
                     Question {i} <span class="points">{question.get_score()} pt(s)</span>
                 </div>
                 <div class="question-content">
-
                     <div class="feature">{feature.stringify()}</div>
-                    
                     <div class="statement">{question.get_statement()}</div>
-                    
                     <h3>Choices</h3>
                     {question.stringify_options()}
-                    
                     <h3>Tags</h3>
                     {tag.stringify()}
                 </div>
             </div>
             '''
-            
             all_answers.append(question.get_answer_choice())
-        
-        # Add footer
-        sg_html += '''
-            <div class="footer">
-                © College Board | AP Classroom Scoring Guide (fetched from AP Classroom Parser)
-            </div>
-        </div>
-        </body>
-        </html>
-        '''
-        
+
+        sg_html = template_html.replace("{{ activity_name }}", self.activity_name)
+        sg_html = sg_html.replace("{{ questions_html }}", questions_html)
+        sg_html = sg_html.replace("{{ stylesheet_css }}", stylesheet_css)
+
         return sg_html, all_answers
     
     def write_scoring_guide(self):

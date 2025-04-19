@@ -90,8 +90,6 @@ class APClassroomParser:
         self.data = data
         self.all_questions_data = [item['questions'][0] for item in data['data']['apiActivity']['items']]
         self.all_features_data = [item['features'][0] if len(item['features']) > 0 else {"feature_id": -1, "type": "Unavailable", "content": "Unavailable"} for item in data['data']['apiActivity']['items']]
-
-        # self.first_question_where_feature_displayed = {Feature(feature).id: -1 for feature in self.all_features_data}
         
         if type == 'quiz':
             self.all_tags_data = [tag_item for tag_item in data['data']['apiActivity']['tags'].values()]
@@ -127,9 +125,9 @@ class APClassroomParser:
             feature = self.get_feature_by_index(i)
 
             questions_html += f'''
-            <div class="question">
+            <div class="question" id="question-{i}">
                 <div class="question-header">
-                    Question {i} <span class="points">{question.get_score()} pt(s)</span>
+                    <a href="javascript:jump()">Question {i}</a> <span class="points">{question.get_score()} {"pt" if question.get_score() == 1 else "pts"}</span>
                 </div>
                 <div class="question-content">
                     <div class="feature">{feature.stringify()}</div>

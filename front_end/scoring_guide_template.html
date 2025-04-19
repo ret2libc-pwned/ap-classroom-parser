@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scoring Guide for {{ activity_name }}</title>
     <style>{{ stylesheet_css }}</style>
+    <script>
+        let jump = () => {
+            question_number = prompt("Enter question #")
+            window.location.href = `#question-${question_number}`
+        }
+    </script>
 </head>
 <body>
 <div class="container">

@@ -55,6 +55,9 @@ class Feature:
     
     def stringify(self):
         """Format options as HTML with proper styling classes"""
+        if self.id == -1:
+            return ""
+
         feature_class = 'feature'
         if 'passage' in self.type:
             feature_class = 'passage'
@@ -86,7 +89,7 @@ class APClassroomParser:
     def __init__(self, data, type):
         self.data = data
         self.all_questions_data = [item['questions'][0] for item in data['data']['apiActivity']['items']]
-        self.all_features_data = [item['features'][0] for item in data['data']['apiActivity']['items']]
+        self.all_features_data = [item['features'][0] if len(item['features']) > 0 else {"feature_id": -1, "type": "Unavailable", "content": "Unavailable"} for item in data['data']['apiActivity']['items']]
 
         # self.first_question_where_feature_displayed = {Feature(feature).id: -1 for feature in self.all_features_data}
         

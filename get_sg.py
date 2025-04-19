@@ -10,13 +10,7 @@ class Question:
 
     def __init__(self, question_data):
         self.data = question_data
-        self.is_zero_indexed = self._check_if_is_zero_indexed()
-
-    def _check_if_is_zero_indexed(self):
-        """Check if the options are zero-indexed"""
-        all_option_symbols = [int(option['value'][1]) for option in self.data['options']]
-        return min(all_option_symbols) == 0 or not(max(all_option_symbols) == 5)
-        
+                
     def get_statement(self):
         """Get the question statement"""
         return self.data['stimulus']
@@ -64,7 +58,7 @@ class Feature:
         if 'passage' in self.type:
             feature_class = 'passage'
         
-        result_html += f"<div class='{feature_class}'>" + self.content + "</div>"
+        result_html = f"<div class='{feature_class}'>" + self.content + "</div>"
         return result_html
 
 
@@ -79,6 +73,7 @@ class Tag:
         result_html = "<div class='tag-list'><list>\n"
         for item in self.data:
             result_html += f"<li>{item}</li>"
+        result_html += "<li>Important: Question fetched by AP Classroom Parser, do not share!</li>"
         result_html += "</list></div>\n"
         return result_html
 
@@ -90,7 +85,7 @@ class APClassroomParser:
     def __init__(self, data, type):
         self.data = data
         self.all_questions_data = [item['questions'][0] for item in data['data']['apiActivity']['items']]
-        # self.all_features_data = [item['features'][0] for item in data['data']['apiActivity']['items']]
+        self.all_features_data = [item['features'][0] for item in data['data']['apiActivity']['items']]
 
         # self.first_question_where_feature_displayed = {Feature(feature).id: -1 for feature in self.all_features_data}
         
@@ -336,6 +331,7 @@ class APClassroomParser:
         for i, question_data in enumerate(self.all_questions_data, 1):
             question = Question(question_data)
             tag = self.get_tag_by_index(i)
+            feature = self.get_feature_by_index(i)
             
             sg_html += f'''
             <div class="question">
@@ -343,14 +339,13 @@ class APClassroomParser:
                     Question {i} <span class="points">{question.get_score()} pt(s)</span>
                 </div>
                 <div class="question-content">
+
+                    <div class="feature">{feature.stringify()}</div>
                     
                     <div class="statement">{question.get_statement()}</div>
                     
                     <h3>Choices</h3>
                     {question.stringify_options()}
-                    
-                    <h3>Answer</h3>
-                    <div class="answer">{question.get_answer_choice()}</div>
                     
                     <h3>Tags</h3>
                     {tag.stringify()}
@@ -363,7 +358,7 @@ class APClassroomParser:
         # Add footer
         sg_html += '''
             <div class="footer">
-                © College Board | AP Classroom Scoring Guide (from AP Classroom Parser)
+                © College Board | AP Classroom Scoring Guide (fetched from AP Classroom Parser)
             </div>
         </div>
         </body>
@@ -400,7 +395,7 @@ def main():
         description='Generate scoring guides with high quality on AP Classroom students\' client-side data package.',
     )
     arg_parser.add_argument('filename', help='What\'s the name (with full directory) of your JSON data?')
-    arg_parser.add_argument('--type', choices=['quiz', 'result'], default='quiz', help='Where did you get your JSON data? \'quiz\' page or \'result\' page?')
+    arg_parser.add_argument('--type', choices=['quiz', 'result'], default='result', help='Where did you get your JSON data? \'quiz\' page or \'result\' page?')
     args = arg_parser.parse_args()
     with open(args.filename, 'r') as fin:
         data = json.load(fin)

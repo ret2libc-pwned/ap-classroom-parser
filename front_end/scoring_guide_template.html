@@ -6,8 +6,8 @@
     <title>Scoring Guide for {{ activity_name }}</title>
     <style>{{ stylesheet_css }}</style>
     <script>
-        let jump = () => {
-            question_number = prompt("Enter question #")
+        const jump_from = (src) => {
+            question_number = prompt("Enter question #", src)
             window.location.href = `#question-${question_number}`
         }
     </script>

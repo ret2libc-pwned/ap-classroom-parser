@@ -127,7 +127,7 @@ class APClassroomParser:
             questions_html += f'''
             <div class="question" id="question-{i}">
                 <div class="question-header">
-                    <a href="javascript:jump()">Question {i}</a> <span class="points">{question.get_score()} {"pt" if question.get_score() == 1 else "pts"}</span>
+                    <a href="javascript:jump_from({i})">Question {i}</a> <span class="points">{question.get_score()} {"pt" if question.get_score() == 1 else "pts"}</span>
                 </div>
                 <div class="question-content">
                     <div class="feature">{feature.stringify()}</div>

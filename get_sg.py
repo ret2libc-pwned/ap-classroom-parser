@@ -127,7 +127,7 @@ class APClassroomParser:
             questions_html += f'''
             <div class="question" id="question-{i}">
                 <div class="question-header">
-                    <a href="javascript:jump_from({i})">Question {i}</a> <span class="points">{question.get_score()} {"pt" if question.get_score() == 1 else "pts"}</span>
+                    <div><span onclick="javascript:jump_from({i})">Question {i}</span> (<a href="#question-{i-1}">Previous</a> <a href="#question-{i+1}">Next</a>)</div> <span class="points">{question.get_score()} {"pt" if question.get_score() == 1 else "pts"}</span>
                 </div>
                 <div class="question-content">
                     {('<div class="feature">' + feature.stringify() + '</div>') if len(feature.stringify()) > 0 else ''}
@@ -176,7 +176,10 @@ def main():
     )
     arg_parser.add_argument('filename', help='What\'s the name (with full directory) of your JSON data?')
     arg_parser.add_argument('--type', choices=['quiz', 'result'], default='result', help='Where did you get your JSON data? \'quiz\' page or \'result\' page?')
+    arg_parser.add_argument('--title', help='Customize title for generated scoring guide')
+    arg_parser.add_argument('--subset', help='Choose a subset of the questions, eg. {1, 3, 5}')
     args = arg_parser.parse_args()
+    
     with open(args.filename, 'r') as fin:
         data = json.load(fin)
 

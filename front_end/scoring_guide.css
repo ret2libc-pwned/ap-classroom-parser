@@ -189,3 +189,5 @@ body {
     margin-bottom: 20px;
     line-height: 1.6;
   }
+
+  @media print { body { font-size: 14px; } }

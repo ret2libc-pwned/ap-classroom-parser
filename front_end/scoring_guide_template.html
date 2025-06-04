@@ -6,10 +6,18 @@
     <title>Scoring Guide for {{ activity_name }}</title>
     <style>{{ stylesheet_css }}</style>
     <script>
-        const jump_from = (src) => {
+        const jump_from = (src, section="") => {
             question_number = prompt("Enter question #", src)
-            window.location.href = `#question-${question_number}`
+            window.location.href = `#${section}-question-${question_number}`
         }
+
+        // setTimeout(() => {
+        //     try {
+        //         window.print();
+        //     } catch (e) {
+        //         alert(`Error when trying to print! ${e.toString()}`)
+        //     }
+        // }, 15)
     </script>
 </head>
 <body>

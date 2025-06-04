@@ -166,6 +166,142 @@ class APClassroomParser:
         return filename
 
 
+class SATQuestion:
+    """Class to represent an individual SAT question"""
+    
+    def __init__(self, question_data, section_name):
+        self.data = question_data
+        self.section = section_name
+
+    def get_number(self):
+        return int(self.data.get('displayNumber'))
+
+    def get_passage(self):
+        return self.data.get('passage', {}).get('body', '')
+
+    def get_statement(self):
+        """Get the question statement"""
+        return self.data.get('prompt', '')
+    
+    def get_options(self):
+        """Get the options dict {'A': "xxx"}"""
+        items = self.data.get('answer', {}).get('choices', {})
+        # print(items)
+        return {key: items.get(key).get('body') for key in items.keys()}
+    
+    def get_answer_choice(self):
+        return self.data.get('answer', {}).get('correctChoice')
+    
+    def is_correct(self):
+        return self.data.get('answer', {}).get('correct') == True
+    
+    def get_wrong_answer(self):
+        return self.data.get('answer', {}).get('response') if not self.is_correct() else None
+
+    def stringify_options(self):
+        """Format options as HTML with proper styling classes"""
+        result_html = "<div class='options'>"
+        options = self.get_options()
+        for letter in options:
+            option_class = "option"
+            if letter == self.get_answer_choice():
+                option_class += " correct-answer"
+            if letter == self.get_wrong_answer():
+                option_class += " wrong-answer"
+            result_html += f"<div class='{option_class}'><div class='option-label'>{letter}.</div> {options[letter]}</div>"
+        result_html += "</div>"
+        return result_html
+
+    def get_rationale(self):
+        """Get explanation for the correct answer"""
+        return self.data.get('answer', {}).get('rationale', '')
+
+    def get_score(self):
+        """Get question score (always 1 for SAT)"""
+        return 1
+    
+    def stringify(self):
+        """Format the question as HTML with proper styling"""
+        return f'''
+        <div class="question-content">
+            {(f'<div class="feature">{self.get_passage()}</div>') if len(self.get_passage()) > 0 else ''}
+            <div class="statement">{self.get_statement()}</div>
+            <h3>Choices</h3>
+            {self.stringify_options()}
+            {(f'<h3>Wrong Answer: {self.get_wrong_answer()}</h3>') if self.get_wrong_answer() != None else ''}
+            <div class="rationale">
+                <h3>Explanation</h3>
+                {self.get_rationale()}
+            </div>
+        </div>
+        '''
+
+class SATSection:
+    """Class to represent a section (Reading/Math) in SAT data"""
+    
+    def __init__(self, section_data):
+        self.name = section_data.get('id', 'Unknown').lower()
+        self.items = section_data.get('items', [])
+
+    def stringify(self):
+        """Format section as HTML"""
+        questions = [SATQuestion(item, self.name) for item in self.items]
+        questions.sort(key=lambda question: question.get_number())
+        html = f'<h2>Section: {self.name.upper()}</h2>'
+        for i, question in enumerate(questions, start=1):
+            html += f'''
+            <div class="question" id="{self.name}-question-{i}">
+                <div class="question-header">
+                    <div><span onclick="javascript:jump_from({i}, '{self.name}')">Question {i}</span> 
+                    (<a href="#{self.name}-question-{i-1}">Previous</a> <a href="#{self.name}-question-{i+1}">Next</a>)</div>
+                    <span class="points">1 pt</span>
+                </div>
+                
+                {question.stringify()}
+            </div>
+            '''
+        return html
+
+class SATParser:
+    """Parser for SAT JSON data"""
+    
+    def __init__(self, data):
+        self.sections = [SATSection(section) for section in data]
+        self.activity_name = "SAT Practice Test"
+
+    def generate_scoring_guide(self):
+        """Generate HTML scoring guide using existing template"""
+        template_path = os.path.join("front_end", "scoring_guide_template.html")
+        stylesheet_path = os.path.join("front_end", "scoring_guide.css")
+
+        with open(template_path, "r") as template_file:
+            template_html = template_file.read()
+        with open(stylesheet_path, "r") as stylesheet_file:
+            stylesheet_css = stylesheet_file.read()
+
+        questions_html = ""
+        for section in self.sections:
+            questions_html += section.stringify()
+
+        sg_html = template_html.replace("{{ activity_name }}", self.activity_name)
+        sg_html = sg_html.replace("{{ questions_html }}", questions_html)
+        sg_html = sg_html.replace("{{ stylesheet_css }}", stylesheet_css)
+
+        return sg_html, []  # Empty list since SAT doesn't use answer choices A-E
+    
+    def write_scoring_guide(self):
+        """Write scoring guide to file"""
+        sg_html, _ = self.generate_scoring_guide()
+        filename = "scoring_guide_SAT.html"
+        
+        with open(filename, "w") as fout:
+            fout.write(sg_html)
+        
+        print(f'[*] Name: {self.activity_name}')
+        print(f'[+] Written: {filename}')
+        return filename
+
+# Update main() function to handle SAT type
 def main():
     """Main function to parse input and generate scoring guide"""
 
@@ -175,7 +311,9 @@ def main():
         description='Generate scoring guides with high quality on AP Classroom students\' client-side data package.',
     )
     arg_parser.add_argument('filename', help='What\'s the name (with full directory) of your JSON data?')
-    arg_parser.add_argument('--type', choices=['quiz', 'result'], default='result', help='Where did you get your JSON data? \'quiz\' page or \'result\' page?')
+    arg_parser.add_argument('--type', choices=['quiz', 'result', 'sat'], 
+                          default='result', 
+                          help='Data type: quiz/result page or SAT')
     arg_parser.add_argument('--title', help='Customize title for generated scoring guide')
     arg_parser.add_argument('--subset', help='Choose a subset of the questions, eg. {1, 3, 5}')
     args = arg_parser.parse_args()
@@ -183,7 +321,11 @@ def main():
     with open(args.filename, 'r') as fin:
         data = json.load(fin)
 
-    parser = APClassroomParser(data, type=args.type)
+    if args.type == 'sat':
+        parser = SATParser(data)
+    else:
+        parser = APClassroomParser(data, type=args.type)
+    
     parser.write_scoring_guide()
 
 

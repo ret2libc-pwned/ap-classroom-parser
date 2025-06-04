@@ -8,7 +8,7 @@
     <script>
         const jump_from = (src, section="") => {
             question_number = prompt("Enter question #", src)
-            window.location.href = `#${section}-question-${question_number}`
+            window.location.href = `#${section + '-'}question-${question_number}`
         }
 
         // setTimeout(() => {

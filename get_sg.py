@@ -5,6 +5,7 @@ import sys
 import argparse
 import os
 
+escape_filename = lambda name: name.replace(' ', '_')
 
 class Question:
     """Class to represent an individual question from the AP Classroom data"""
@@ -86,7 +87,7 @@ class APClassroomParser:
     """Main class for parsing AP Classroom data and generating scoring guides"""
     
 
-    def __init__(self, data, type):
+    def __init__(self, data, type, name=None):
         self.data = data
         self.all_questions_data = [item['questions'][0] for item in data['data']['apiActivity']['items']]
         self.all_features_data = [item['features'][0] if len(item['features']) > 0 else {"feature_id": -1, "type": "Unavailable", "content": "Unavailable"} for item in data['data']['apiActivity']['items']]
@@ -95,7 +96,7 @@ class APClassroomParser:
             self.all_tags_data = [tag_item for tag_item in data['data']['apiActivity']['tags'].values()]
         elif type == 'result':
             self.all_tags_data = [['Unavailable'] for question in self.all_questions_data]
-        self.activity_name = data['data']['apiActivity']['questionsApiActivity']['name']
+        self.activity_name = data['data']['apiActivity']['questionsApiActivity']['name'] if name == None else name
     
     def get_tag_by_index(self, index):
         """Get tag data by index (1-based)"""
@@ -150,8 +151,6 @@ class APClassroomParser:
     def write_scoring_guide(self):
         """Write the scoring guide to a file and print information"""
         sg_html, all_answers = self.generate_scoring_guide()
-
-        escape_filename = lambda name: name.replace(' ', '_')
         
         filename = f"scoring_guide_{self.activity_name}.html"
         filename = escape_filename(filename)
@@ -177,7 +176,7 @@ class SATQuestion:
         return int(self.data.get('displayNumber'))
 
     def get_passage(self):
-        return self.data.get('passage', {}).get('body', '')
+        return self.data.get('passage', {}).get('body', '').replace('<span class=\"sr-only\">blank</span>', '')
 
     def get_statement(self):
         """Get the question statement"""
@@ -239,13 +238,18 @@ class SATQuestion:
 class SATSection:
     """Class to represent a section (Reading/Math) in SAT data"""
     
-    def __init__(self, section_data):
+    def __init__(self, section_data, subset='full'):
         self.name = section_data.get('id', 'Unknown').lower()
         self.items = section_data.get('items', [])
+        self.subset = subset
 
     def stringify(self):
         """Format section as HTML"""
         questions = [SATQuestion(item, self.name) for item in self.items]
+        if self.subset == 'wrong':
+            for question in questions:
+                if question.is_correct() == True:
+                    questions.remove(question)
         questions.sort(key=lambda question: question.get_number())
         html = f'<h2>Section: {self.name.upper()}</h2>'
         for i, question in enumerate(questions, start=1):
@@ -265,9 +269,10 @@ class SATSection:
 class SATParser:
     """Parser for SAT JSON data"""
     
-    def __init__(self, data):
-        self.sections = [SATSection(section) for section in data]
-        self.activity_name = "SAT Practice Test"
+    def __init__(self, data, name="SAT Practice Test", subset='full'):
+        self.sections = [SATSection(section, subset=subset) for section in data]
+        self.activity_name = name
+        self.subset = subset
 
     def generate_scoring_guide(self):
         """Generate HTML scoring guide using existing template"""
@@ -292,7 +297,7 @@ class SATParser:
     def write_scoring_guide(self):
         """Write scoring guide to file"""
         sg_html, _ = self.generate_scoring_guide()
-        filename = "scoring_guide_SAT.html"
+        filename = f"scoring_guide_{escape_filename(self.activity_name)}.html"
         
         with open(filename, "w") as fout:
             fout.write(sg_html)
@@ -308,23 +313,23 @@ def main():
     # Initialize parser
     arg_parser = argparse.ArgumentParser(
         prog='get_sg.py',
-        description='Generate scoring guides with high quality on AP Classroom students\' client-side data package.',
+        description='Generate scoring guides with high quality on AP Classroom and SAT students\' client-side data package.',
     )
     arg_parser.add_argument('filename', help='What\'s the name (with full directory) of your JSON data?')
     arg_parser.add_argument('--type', choices=['quiz', 'result', 'sat'], 
                           default='result', 
                           help='Data type: quiz/result page or SAT')
     arg_parser.add_argument('--title', help='Customize title for generated scoring guide')
-    arg_parser.add_argument('--subset', help='Choose a subset of the questions, eg. {1, 3, 5}')
+    arg_parser.add_argument('--subset', help='Choose a subset of the questions, eg. wrong (SAT only)', choices=['full', 'wrong'], default='full')
     args = arg_parser.parse_args()
     
     with open(args.filename, 'r') as fin:
         data = json.load(fin)
 
     if args.type == 'sat':
-        parser = SATParser(data)
+        parser = SATParser(data, name=args.title, subset=args.subset)
     else:
-        parser = APClassroomParser(data, type=args.type)
+        parser = APClassroomParser(data, type=args.type, name=args.title)
     
     parser.write_scoring_guide()
 

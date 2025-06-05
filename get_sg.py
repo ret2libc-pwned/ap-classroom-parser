@@ -247,9 +247,8 @@ class SATSection:
         """Format section as HTML"""
         questions = [SATQuestion(item, self.name) for item in self.items]
         if self.subset == 'wrong':
-            for question in questions:
-                if question.is_correct() == True:
-                    questions.remove(question)
+            questions = [SATQuestion(item, self.name) for item in self.items if SATQuestion(item, self.name).is_correct() is False]
+            # print(f'subset=wrong, {prev_len} -> {after_len}')
         questions.sort(key=lambda question: question.get_number())
         html = f'<h2>Section: {self.name.upper()}</h2>'
         for i, question in enumerate(questions, start=1):
@@ -260,7 +259,7 @@ class SATSection:
                     (<a href="#{self.name}-question-{i-1}">Previous</a> <a href="#{self.name}-question-{i+1}">Next</a>)</div>
                     <span class="points">1 pt</span>
                 </div>
-                
+                {f'<div>(Question ID in the exam: {question.get_number()})</div>' if self.subset == 'wrong' else ''}
                 {question.stringify()}
             </div>
             '''
